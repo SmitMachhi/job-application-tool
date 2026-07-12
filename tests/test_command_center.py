@@ -25,6 +25,21 @@ def test_search_links_cover_selected_sources_and_locations():
     assert any("Halifax" in link.query for link in links)
 
 
+def test_search_config_accepts_custom_queries_and_any_location():
+    config = SearchConfig.from_text(
+        queries_text="financial analyst\nhealthcare data analyst\n",
+        locations_text="Calgary AB\nNew York remote\n",
+        sources=["linkedin", "google_jobs"],
+    )
+
+    links = build_search_links(config)
+
+    assert config.target_titles == ["financial analyst", "healthcare data analyst"]
+    assert config.locations == ["Calgary AB", "New York remote"]
+    assert any("financial+analyst" in link.url and "Calgary+AB" in link.url for link in links)
+    assert any("healthcare data analyst New York remote" == link.query for link in links)
+
+
 def test_search_link_jobs_create_apply_ready_fallback_rows():
     config = SearchConfig.default_data_analyst()
 

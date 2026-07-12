@@ -4,12 +4,36 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 
+def _clean_lines(text: str) -> list[str]:
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for raw in text.splitlines():
+        item = " ".join(raw.strip().split())
+        key = item.lower()
+        if item and key not in seen:
+            seen.add(key)
+            cleaned.append(item)
+    return cleaned
+
+
 @dataclass
 class SearchConfig:
     target_titles: list[str]
     locations: list[str]
     sources: list[str]
     experience_levels: list[str] = field(default_factory=lambda: ["internship", "entry-level", "0-2 years", "any strong match"])
+
+    @classmethod
+    def from_text(cls, queries_text: str, locations_text: str, sources: list[str]) -> "SearchConfig":
+        return cls(
+            target_titles=_clean_lines(queries_text),
+            locations=_clean_lines(locations_text),
+            sources=sources,
+        )
+
+    @property
+    def search_queries(self) -> list[str]:
+        return self.target_titles
 
     @classmethod
     def default_data_analyst(cls) -> "SearchConfig":

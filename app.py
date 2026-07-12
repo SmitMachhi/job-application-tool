@@ -75,8 +75,9 @@ tabs = st.tabs(["1. Find jobs", "2. Tailor package", "3. Tracker"])
 
 with tabs[0]:
     st.subheader("Build the apply-ready job queue")
-    titles_text = st.text_area("Target titles", value="\n".join(DEFAULT_TITLES), height=140)
-    locations_text = st.text_area("Locations", value="\n".join(DEFAULT_LOCATIONS), height=120)
+    st.caption("Enter any job searches you want. One query per line. Enter any locations you want. The app creates a queue for every query × location × source.")
+    titles_text = st.text_area("Search queries / job titles", value="\n".join(DEFAULT_TITLES), height=140, placeholder="data analyst\nfinancial analyst\nhealthcare data analyst")
+    locations_text = st.text_area("Locations", value="\n".join(DEFAULT_LOCATIONS), height=120, placeholder="Toronto ON\nCalgary AB\nRemote Canada\nNew York remote")
     source_labels = {
         "linkedin": "LinkedIn",
         "indeed": "Indeed",
@@ -91,11 +92,20 @@ with tabs[0]:
     )
 
     if st.button("Generate job queue in Excel", type="primary"):
-        config = SearchConfig(
-            target_titles=[line.strip() for line in titles_text.splitlines() if line.strip()],
-            locations=[line.strip() for line in locations_text.splitlines() if line.strip()],
+        config = SearchConfig.from_text(
+            queries_text=titles_text,
+            locations_text=locations_text,
             sources=selected_sources,
         )
+        if not config.search_queries:
+            st.error("Add at least one search query/job title.")
+            st.stop()
+        if not config.locations:
+            st.error("Add at least one location.")
+            st.stop()
+        if not config.sources:
+            st.error("Select at least one source.")
+            st.stop()
         jobs = search_link_jobs(config)
         write_application_workbook(TRACKER, jobs, append=True)
         st.success(f"Added/updated {len(jobs)} search queue rows in applications.xlsx.")

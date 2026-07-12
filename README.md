@@ -105,10 +105,25 @@ streamlit run app.py
 
 Open the app and go to **Find jobs**.
 
-- Keep or edit the target titles
-- Keep or edit the locations
+- Enter any search queries/job titles, one per line
+- Enter any locations, one per line
 - Pick sources
 - Click **Generate job queue in Excel**
+
+The app creates rows for every query × location × source combination. Example:
+
+```text
+Search queries:
+data analyst
+financial analyst
+healthcare data analyst
+
+Locations:
+Toronto ON
+Calgary AB
+Remote Canada
+New York remote
+```
 
 This updates `applications.xlsx` with source links you can open immediately.
 

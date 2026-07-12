@@ -5,13 +5,14 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from jobtool.ai_modes import AI_MODES, resolve_ai_mode
 from jobtool.documents import extract_resume_text
 from jobtool.job_parser import fetch_job_text, parse_job
 from jobtool.models import JobLead, SearchConfig
 from jobtool.pipeline import prepare_application_package
 from jobtool.security import EncryptedStore
-from jobtool.sources.search_links import search_link_jobs
-from jobtool.workbook import read_application_workbook, write_application_workbook
+from jobtool.sources.search_links import DEFAULT_SOURCE_KEYS, SOURCE_LABELS, search_link_jobs
+from jobtool.workbook import dataframe_to_excel_bytes, read_application_workbook, write_application_workbook
 
 ROOT = Path(__file__).parent
 OUTPUTS = ROOT / "outputs"
@@ -34,7 +35,7 @@ DEFAULT_TITLES = [
     "BI analyst",
 ]
 DEFAULT_LOCATIONS = ["GTA", "Toronto ON", "British Columbia", "Vancouver BC", "Halifax NS", "Remote Canada"]
-DEFAULT_SOURCES = ["linkedin", "indeed", "google_jobs", "canada_job_bank"]
+DEFAULT_SOURCES = DEFAULT_SOURCE_KEYS
 
 with st.sidebar:
     st.header("Private profile")
@@ -42,8 +43,13 @@ with st.sidebar:
     email = st.text_input("Email")
     phone = st.text_input("Phone")
     location = st.text_input("Location", value="Canada")
-    ai_mode = st.selectbox("AI mode", ["Rules/templates only", "Local-only AI later", "API AI later"], index=0)
-    st.caption("v1 uses rules/templates only. API/local AI hooks are explicit so private data does not leave the machine by accident.")
+    ai_labels = [mode.label for mode in AI_MODES]
+    ai_mode_label = st.selectbox("AI mode", ai_labels, index=0)
+    ai_mode = resolve_ai_mode(ai_mode_label)
+    if ai_mode.enabled:
+        st.success(ai_mode.message)
+    else:
+        st.info(ai_mode.message)
 
     password = st.text_input("Encryption password", type="password", help="Used only if you save/load the local encrypted profile.")
     c1, c2 = st.columns(2)
@@ -78,18 +84,14 @@ with tabs[0]:
     st.caption("Enter any job searches you want. One query per line. Enter any locations you want. The app creates a queue for every query × location × source.")
     titles_text = st.text_area("Search queries / job titles", value="\n".join(DEFAULT_TITLES), height=140, placeholder="data analyst\nfinancial analyst\nhealthcare data analyst")
     locations_text = st.text_area("Locations", value="\n".join(DEFAULT_LOCATIONS), height=120, placeholder="Toronto ON\nCalgary AB\nRemote Canada\nNew York remote")
-    source_labels = {
-        "linkedin": "LinkedIn",
-        "indeed": "Indeed",
-        "google_jobs": "Google Jobs",
-        "canada_job_bank": "Canada Job Bank",
-    }
+    source_labels = SOURCE_LABELS
     selected_sources = st.multiselect(
         "Sources",
         options=list(source_labels.keys()),
         default=DEFAULT_SOURCES,
         format_func=lambda value: source_labels[value],
     )
+    replace_existing = st.checkbox("Replace existing Excel/tracker list with this search", value=False)
 
     if st.button("Generate job queue in Excel", type="primary"):
         config = SearchConfig.from_text(
@@ -107,9 +109,14 @@ with tabs[0]:
             st.error("Select at least one source.")
             st.stop()
         jobs = search_link_jobs(config)
-        write_application_workbook(TRACKER, jobs, append=True)
-        st.success(f"Added/updated {len(jobs)} search queue rows in applications.xlsx.")
-        st.dataframe(read_application_workbook(TRACKER), use_container_width=True)
+        write_application_workbook(TRACKER, jobs, append=not replace_existing)
+        st.success(f"Updated applications.xlsx and tracker with {len(jobs)} rows.")
+        queue_df = read_application_workbook(TRACKER)
+        st.dataframe(
+            queue_df,
+            use_container_width=True,
+            column_config={"Apply link": st.column_config.LinkColumn("Apply link", display_text="Open")},
+        )
         with open(TRACKER, "rb") as f:
             st.download_button("Download Excel command center", f, file_name="applications.xlsx")
 
@@ -127,9 +134,8 @@ with tabs[1]:
     job_location = st.text_input("Job location", placeholder="Toronto, Vancouver, Halifax, Remote Canada...")
 
     if st.button("Generate tailored package", type="primary"):
-        if ai_mode != "Rules/templates only":
-            st.error("That AI mode is not implemented yet. Use rules/templates only for v1 privacy-safe generation.")
-            st.stop()
+        if not ai_mode.enabled:
+            st.info(ai_mode.message)
         if not resume_file:
             st.error("Upload your resume first.")
             st.stop()
@@ -196,8 +202,18 @@ with tabs[2]:
     else:
         status_filter = st.multiselect("Status filter", sorted(df["Status"].dropna().unique().tolist()))
         view = df[df["Status"].isin(status_filter)] if status_filter else df
-        st.dataframe(view, use_container_width=True)
+        st.dataframe(
+            view,
+            use_container_width=True,
+            column_config={"Apply link": st.column_config.LinkColumn("Apply link", display_text="Open")},
+        )
         csv = view.to_csv(index=False).encode("utf-8")
-        st.download_button("Download tracker CSV", csv, file_name="applications.csv", mime="text/csv")
+        st.download_button("Download filtered tracker CSV", csv, file_name="applications_filtered.csv", mime="text/csv")
+        st.download_button(
+            "Download filtered tracker Excel",
+            dataframe_to_excel_bytes(view),
+            file_name="applications_filtered.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
         with open(TRACKER, "rb") as f:
-            st.download_button("Download tracker Excel", f, file_name="applications.xlsx")
+            st.download_button("Download full tracker Excel", f, file_name="applications.xlsx")

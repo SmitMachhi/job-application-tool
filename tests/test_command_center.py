@@ -4,9 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from jobtool.ai_modes import AI_MODES, resolve_ai_mode
 from jobtool.models import JobLead, SearchConfig
-from jobtool.sources.search_links import build_search_links, search_link_jobs
-from jobtool.workbook import APPLICATION_COLUMNS, write_application_workbook
+from jobtool.sources.search_links import SOURCE_LABELS, build_search_links, search_link_jobs
+from jobtool.workbook import APPLICATION_COLUMNS, dataframe_to_excel_bytes, write_application_workbook
 from jobtool.security import EncryptedStore
 from jobtool.pipeline import prepare_application_package
 
@@ -33,11 +34,44 @@ def test_search_config_accepts_custom_queries_and_any_location():
     )
 
     links = build_search_links(config)
+    jobs = search_link_jobs(config)
 
     assert config.target_titles == ["financial analyst", "healthcare data analyst"]
     assert config.locations == ["Calgary AB", "New York remote"]
     assert any("financial+analyst" in link.url and "Calgary+AB" in link.url for link in links)
     assert any("healthcare data analyst New York remote" == link.query for link in links)
+    assert any(job.title == "Financial Analyst search queue" and job.location == "Calgary AB" for job in jobs)
+    assert any(job.title == "Healthcare Data Analyst search queue" and job.location == "New York remote" for job in jobs)
+
+
+def test_maximum_source_catalog_is_available():
+    expected = {
+        "linkedin",
+        "indeed",
+        "google_jobs",
+        "canada_job_bank",
+        "glassdoor",
+        "ziprecruiter",
+        "workopolis",
+        "monster",
+        "wellfound",
+        "builtin",
+        "simplyhired",
+        "eluta",
+        "talent_com",
+        "careerjet",
+        "greenhouse_google",
+        "lever_google",
+    }
+
+    assert expected.issubset(SOURCE_LABELS)
+
+
+def test_all_ai_modes_are_selectable_with_safe_fallback():
+    assert {mode.key for mode in AI_MODES} == {"rules", "local", "api"}
+    assert resolve_ai_mode("rules").enabled is True
+    assert resolve_ai_mode("local").enabled is False
+    assert "falls back" in resolve_ai_mode("api").message.lower()
 
 
 def test_search_link_jobs_create_apply_ready_fallback_rows():
@@ -78,6 +112,21 @@ def test_write_application_workbook_uses_command_center_columns(tmp_path: Path):
     assert df.loc[0, "Company"] == "Example Co"
     assert df.loc[0, "Status"] == "Ready to apply"
     assert df.loc[0, "Follow-up date"]
+
+
+def test_filtered_tracker_can_be_downloaded_as_excel_bytes():
+    df = pd.DataFrame(
+        [
+            {"Company": "Ready Co", "Status": "Ready to apply", "Apply link": "https://example.com/ready"},
+            {"Company": "Applied Co", "Status": "Applied", "Apply link": "https://example.com/applied"},
+        ]
+    )
+    filtered = df[df["Status"] == "Ready to apply"]
+
+    payload = dataframe_to_excel_bytes(filtered)
+    reread = pd.read_excel(payload)
+
+    assert reread["Company"].tolist() == ["Ready Co"]
 
 
 def test_encrypted_store_round_trips_without_plaintext(tmp_path: Path):

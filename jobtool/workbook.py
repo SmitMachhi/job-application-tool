@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -79,3 +80,10 @@ def read_application_workbook(path: Path) -> pd.DataFrame:
         if column not in df.columns:
             df[column] = ""
     return df[APPLICATION_COLUMNS]
+
+
+def dataframe_to_excel_bytes(df: pd.DataFrame) -> BytesIO:
+    buffer = BytesIO()
+    df.to_excel(buffer, index=False)
+    buffer.seek(0)
+    return buffer

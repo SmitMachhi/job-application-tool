@@ -56,6 +56,8 @@ class SearchLink:
     source: str
     query: str
     url: str
+    title: str = ""
+    location: str = ""
 
 
 @dataclass

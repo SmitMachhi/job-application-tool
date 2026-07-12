@@ -7,11 +7,24 @@ It helps you avoid manually jumping across job boards by creating an Excel/dashb
 ## What it does now
 
 - Creates an apply-ready Excel workbook: `applications.xlsx`
-- Generates search queues for:
+- Lets you search any job query in any location
+- Generates search queues for 16 sources:
   - LinkedIn
   - Indeed
   - Google Jobs
   - Canada Job Bank
+  - Glassdoor
+  - ZipRecruiter
+  - Workopolis
+  - Monster
+  - Wellfound
+  - Built In
+  - SimplyHired
+  - Eluta
+  - Talent.com
+  - Careerjet
+  - Greenhouse company pages
+  - Lever company pages
 - Targets data analyst-style roles across:
   - GTA
   - British Columbia
@@ -34,7 +47,11 @@ It helps you avoid manually jumping across job boards by creating an Excel/dashb
 - It does not upload your resume to AI by default.
 - It does not promise interviews.
 
-The current AI mode is **Rules/templates only**. Local/API AI options are shown but blocked until implemented explicitly.
+The current AI mode lets you select:
+
+- **Rules/templates only**: active now, fully local
+- **Local AI**: selectable, falls back to rules/templates until a local model is configured
+- **API AI**: selectable, falls back to rules/templates until an API provider is configured
 
 ## Privacy
 
@@ -125,7 +142,14 @@ Remote Canada
 New York remote
 ```
 
-This updates `applications.xlsx` with source links you can open immediately.
+This updates `applications.xlsx` and the dashboard tracker with source links you can open immediately.
+
+Options:
+
+- Leave **Replace existing Excel/tracker list** off to append/dedupe new searches.
+- Turn it on to rebuild the tracker from only the current search.
+- In **Tracker**, filter rows and download either filtered CSV, filtered Excel, or full Excel.
+- The **Apply link** column is clickable in the dashboard, so you can open the job site directly.
 
 ### 2. Tailor package
 

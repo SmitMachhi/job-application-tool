@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from jobtool.ai_modes import AI_MODES, resolve_ai_mode
+from jobtool.career_path import CareerProfile, build_career_plan, career_plan_to_dataframe
 from jobtool.documents import extract_resume_text
 from jobtool.job_parser import fetch_job_text, parse_job
 from jobtool.models import JobLead, SearchConfig
@@ -22,9 +23,9 @@ PROFILE = DATA / "profile.enc"
 OUTPUTS.mkdir(exist_ok=True)
 DATA.mkdir(exist_ok=True)
 
-st.set_page_config(page_title="Job Application Command Center", layout="wide")
-st.title("Job Application Command Center")
-st.caption("Find jobs → score fit → generate tailored resume + cover letter → track applications in Excel.")
+st.set_page_config(page_title="PathPilot-style Career Command Center", layout="wide")
+st.title("Career Path + Job Application Command Center")
+st.caption("Map career paths → close skill gaps → build a job queue → tailor resume + cover letter → track applications. No AI interview features.")
 
 DEFAULT_TITLES = [
     "data analyst",
@@ -77,13 +78,84 @@ with st.sidebar:
 
 st.warning("Privacy: generated docs, Excel files, resumes, and encrypted profiles stay local. Do not commit personal files to git.", icon="🔒")
 
-tabs = st.tabs(["1. Find jobs", "2. Tailor package", "3. Tracker"])
+tabs = st.tabs(["1. Career path", "2. Find jobs", "3. Tailor package", "4. Tracker"])
 
 with tabs[0]:
+    st.subheader("Build a practical career path")
+    st.caption("PathPilot-style career navigation: role fit, missing skills, project roadmap, and search-ready targets. This intentionally excludes AI interview practice.")
+    c1, c2 = st.columns(2)
+    with c1:
+        current_role = st.text_input("Current starting point", value="BSc IT student / aspiring data analyst")
+        target_roles_text = st.text_area(
+            "Target roles",
+            value="Data Analyst\nBusiness Intelligence Analyst\nReporting Analyst",
+            height=110,
+            help="One role per line. These become recommended career paths and job-search titles.",
+        )
+        skills_text = st.text_area(
+            "Current skills / tools",
+            value="SQL\nExcel\nPython\nPower BI\ncommunication",
+            height=130,
+        )
+    with c2:
+        interests_text = st.text_area(
+            "Interests / industries",
+            value="dashboards\nbusiness reporting\nfinance\nhealthcare",
+            height=110,
+        )
+        constraints_text = st.text_area(
+            "Constraints / preferences",
+            value="entry level\nCanada\nremote preferred",
+            height=110,
+        )
+        plan_locations_text = st.text_area(
+            "Job-search locations for this plan",
+            value="Toronto ON\nRemote Canada",
+            height=90,
+        )
+
+    if st.button("Generate career path", type="primary"):
+        profile = CareerProfile.from_text(
+            current_role=current_role,
+            target_roles_text=target_roles_text,
+            skills_text=skills_text,
+            interests_text=interests_text,
+            constraints_text=constraints_text,
+        )
+        plan_locations = [line.strip() for line in plan_locations_text.splitlines() if line.strip()]
+        plan = build_career_plan(profile, locations=plan_locations)
+        st.session_state["career_search_titles"] = "\n".join(plan.search_config.target_titles)
+        st.session_state["career_search_locations"] = "\n".join(plan.search_config.locations)
+        plan_df = career_plan_to_dataframe(plan.recommendations)
+
+        st.success("Career path generated. Use the generated titles/locations in Find jobs, or download the plan.")
+        for rec in plan.recommendations:
+            with st.expander(f"{rec.role} — {rec.fit_score}% fit", expanded=rec == plan.recommendations[0]):
+                st.write(rec.why_it_fits)
+                m1, m2 = st.columns(2)
+                m1.markdown("**Matched skills**")
+                m1.write(", ".join(rec.matched_skills) or "None yet")
+                m2.markdown("**Missing skills to close**")
+                m2.write(", ".join(rec.missing_skills) or "No major gaps")
+                st.markdown("**Roadmap**")
+                for step in rec.roadmap:
+                    st.write(f"- **{step.stage}:** {step.action}")
+
+        st.dataframe(plan_df, use_container_width=True)
+        st.download_button(
+            "Download career path Excel",
+            dataframe_to_excel_bytes(plan_df),
+            file_name="career_path.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+with tabs[1]:
     st.subheader("Build the apply-ready job queue")
     st.caption("Enter any job searches you want. One query per line. Enter any locations you want. The app creates a queue for every query × location × source.")
-    titles_text = st.text_area("Search queries / job titles", value="\n".join(DEFAULT_TITLES), height=140, placeholder="data analyst\nfinancial analyst\nhealthcare data analyst")
-    locations_text = st.text_area("Locations", value="\n".join(DEFAULT_LOCATIONS), height=120, placeholder="Toronto ON\nCalgary AB\nRemote Canada\nNew York remote")
+    titles_value = st.session_state.get("career_search_titles", "\n".join(DEFAULT_TITLES))
+    locations_value = st.session_state.get("career_search_locations", "\n".join(DEFAULT_LOCATIONS))
+    titles_text = st.text_area("Search queries / job titles", value=titles_value, height=140, placeholder="data analyst\nfinancial analyst\nhealthcare data analyst")
+    locations_text = st.text_area("Locations", value=locations_value, height=120, placeholder="Toronto ON\nCalgary AB\nRemote Canada\nNew York remote")
     source_labels = SOURCE_LABELS
     selected_sources = st.multiselect(
         "Sources",
@@ -120,7 +192,7 @@ with tabs[0]:
         with open(TRACKER, "rb") as f:
             st.download_button("Download Excel command center", f, file_name="applications.xlsx")
 
-with tabs[1]:
+with tabs[2]:
     st.subheader("Create tailored resume + cover letter")
     resume_file = st.file_uploader("Upload base resume", type=["docx", "pdf", "txt"])
     job_link = st.text_input("Apply/job posting link")
@@ -194,7 +266,7 @@ with tabs[1]:
         with open(TRACKER, "rb") as f:
             st.download_button("Download updated Excel", f, file_name="applications.xlsx")
 
-with tabs[2]:
+with tabs[3]:
     st.subheader("Application tracker")
     df = read_application_workbook(TRACKER)
     if df.empty:

@@ -5,11 +5,63 @@ from pathlib import Path
 import pandas as pd
 
 from jobtool.ai_modes import AI_MODES, resolve_ai_mode
+from jobtool.career_path import CareerProfile, build_career_plan, career_plan_to_dataframe, recommend_roles
 from jobtool.models import JobLead, SearchConfig
 from jobtool.sources.search_links import SOURCE_LABELS, build_search_links, search_link_jobs
 from jobtool.workbook import APPLICATION_COLUMNS, dataframe_to_excel_bytes, write_application_workbook
 from jobtool.security import EncryptedStore
 from jobtool.pipeline import prepare_application_package
+
+
+def test_career_profile_dedupes_skills_and_goals():
+    profile = CareerProfile.from_text(
+        current_role="student",
+        target_roles_text="Data Analyst\nBI Analyst\nData Analyst",
+        skills_text="SQL\nExcel\nsql\nPower BI",
+        interests_text="healthcare\nfinance",
+        constraints_text="Canada only\nremote preferred",
+    )
+
+    assert profile.target_roles == ["Data Analyst", "BI Analyst"]
+    assert profile.skills == ["SQL", "Excel", "Power BI"]
+    assert profile.interests == ["healthcare", "finance"]
+    assert profile.constraints == ["Canada only", "remote preferred"]
+
+
+def test_recommend_roles_scores_fit_and_missing_skills_without_interview_features():
+    profile = CareerProfile.from_text(
+        current_role="BSc IT student",
+        target_roles_text="Data Analyst\nBusiness Intelligence Analyst\nMachine Learning Engineer",
+        skills_text="SQL\nExcel\nPython\ncommunication",
+        interests_text="dashboards\nbusiness reporting",
+        constraints_text="entry level\nCanada",
+    )
+
+    recommendations = recommend_roles(profile)
+
+    assert recommendations[0].role == "Data Analyst"
+    assert recommendations[0].fit_score >= recommendations[-1].fit_score
+    assert "Power BI" in recommendations[0].missing_skills or "Tableau" in recommendations[0].missing_skills
+    combined = " ".join(step.action for rec in recommendations for step in rec.roadmap)
+    assert "interview" not in combined.lower()
+
+
+def test_build_career_plan_creates_search_config_and_downloadable_rows():
+    profile = CareerProfile.from_text(
+        current_role="student",
+        target_roles_text="Data Analyst\nBI Analyst",
+        skills_text="SQL\nExcel",
+        interests_text="analytics",
+        constraints_text="Toronto\nRemote Canada",
+    )
+
+    plan = build_career_plan(profile, locations=["Toronto ON", "Remote Canada"])
+    df = career_plan_to_dataframe(plan.recommendations)
+
+    assert plan.search_config.target_titles[:2] == ["Data Analyst", "BI Analyst"]
+    assert plan.search_config.locations == ["Toronto ON", "Remote Canada"]
+    assert list(df.columns) == ["Role", "Fit score", "Why it fits", "Missing skills", "Next actions"]
+    assert "interview" not in df.to_string().lower()
 
 
 def test_search_links_cover_selected_sources_and_locations():

@@ -1,11 +1,19 @@
-# Job Application Command Center
+# Career Path + Job Application Command Center
 
-A local-first job search command center for data analyst applications.
+A local-first PathPilot-style career navigation and job application command center.
 
-It helps you avoid manually jumping across job boards by creating an Excel/dashboard queue with job-search links, then generates tailored resume and cover letter `.docx` files when you paste/import a real posting.
+It helps you map realistic career paths, identify skill gaps, create a project roadmap, generate job-search queues, and then tailor resume/cover-letter files for real postings. It deliberately does **not** include AI interview practice or interview simulation features.
 
 ## What it does now
 
+- Builds a PathPilot-style career plan:
+  - target role recommendations
+  - fit score by role
+  - matched skills
+  - missing skills
+  - 4-week execution roadmap
+  - downloadable `career_path.xlsx`
+- Creates a job-search config from the career plan
 - Creates an apply-ready Excel workbook: `applications.xlsx`
 - Lets you search any job query in any location
 - Generates search queues for 16 sources:
@@ -42,6 +50,7 @@ It helps you avoid manually jumping across job boards by creating an Excel/dashb
 
 ## What it does not do yet
 
+- It does not include AI interview practice, mock interviews, interview simulation, or interview coaching.
 - It does not auto-apply.
 - It does not bypass LinkedIn/Indeed scraping protections.
 - It does not upload your resume to AI by default.
@@ -118,7 +127,20 @@ streamlit run app.py
 
 ## How to use
 
-### 1. Find jobs
+### 1. Career path
+
+Open the app and go to **Career path**.
+
+- Add current starting point
+- Add target roles, one per line
+- Add current skills/tools
+- Add interests, industries, and constraints
+- Add search locations
+- Click **Generate career path**
+
+The app shows role recommendations, fit scores, missing skills, a four-week roadmap, and a downloadable career plan Excel file. The generated roles/locations can seed the **Find jobs** tab.
+
+### 2. Find jobs
 
 Open the app and go to **Find jobs**.
 
@@ -151,7 +173,7 @@ Options:
 - In **Tracker**, filter rows and download either filtered CSV, filtered Excel, or full Excel.
 - The **Apply link** column is clickable in the dashboard, so you can open the job site directly.
 
-### 2. Tailor package
+### 3. Tailor package
 
 Go to **Tailor package**.
 
@@ -166,7 +188,7 @@ The app creates:
 - cover letter `.docx`
 - updated Excel tracker row
 
-### 3. Tracker
+### 4. Tracker
 
 Go to **Tracker**.
 
@@ -206,7 +228,7 @@ uv run pytest -q
 Expected result:
 
 ```text
-8 passed
+15 passed
 ```
 
 ## Current architecture
@@ -215,6 +237,7 @@ Expected result:
 app.py
 jobtool/
   models.py
+  career_path.py
   pipeline.py
   security.py
   workbook.py

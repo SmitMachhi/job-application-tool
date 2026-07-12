@@ -1,7 +1,21 @@
-.venv/
-*.egg-info/
-__pycache__/
-.pytest_cache/
+# Local/private files
+.env
+*.env
+profile.enc
+data/
 outputs/
 applications.xlsx
-*.pyc
+*.sqlite
+*.db
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

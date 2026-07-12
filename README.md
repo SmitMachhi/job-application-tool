@@ -1,62 +1,59 @@
-# Job Application Tool
+# Job Application Command Center
 
-A local job-application assistant for students and early-career applicants.
+A local-first job search command center for data analyst applications.
 
-You upload your resume, paste a job posting or job link, and the app creates:
+It helps you avoid manually jumping across job boards by creating an Excel/dashboard queue with job-search links, then generates tailored resume and cover letter `.docx` files when you paste/import a real posting.
 
-- a tailored resume `.docx`
-- a tailored cover letter `.docx`
-- an Excel tracker row with the job link and generated document paths
+## What it does now
 
-The tool runs locally on your device. No API key is required.
+- Creates an apply-ready Excel workbook: `applications.xlsx`
+- Generates search queues for:
+  - LinkedIn
+  - Indeed
+  - Google Jobs
+  - Canada Job Bank
+- Targets data analyst-style roles across:
+  - GTA
+  - British Columbia
+  - Halifax
+  - Remote Canada
+- Lets you paste a job description or job link
+- Scores resume/job match
+- Shows missing skills/keywords honestly
+- Generates:
+  - tailored resume `.docx`
+  - cover letter `.docx`
+- Tracks status and follow-up dates
+- Saves generated files in `outputs/`
+- Supports encrypted local profile storage in `data/profile.enc`
 
-## Features
+## What it does not do yet
 
-- Upload resume as `.docx`, `.pdf`, or `.txt`
-- Paste a job link or full job description
-- Extract important keywords from the job posting
-- Compare the job posting against your resume
-- Show matched and missing keywords
-- Generate a tailored resume draft without inventing experience
-- Generate a cover letter draft
-- Save generated files in `outputs/`
-- Track applications in `applications.xlsx`
+- It does not auto-apply.
+- It does not bypass LinkedIn/Indeed scraping protections.
+- It does not upload your resume to AI by default.
+- It does not promise interviews.
 
-## Important rule
+The current AI mode is **Rules/templates only**. Local/API AI options are shown but blocked until implemented explicitly.
 
-This tool helps rewrite and reorganize your real experience. It does **not** fake skills, jobs, degrees, or projects.
+## Privacy
 
-If a keyword is missing, add it only if it is true and you can prove it with coursework, projects, internships, or portfolio work.
+Everything runs locally.
 
-## Project structure
+Private/runtime files are gitignored:
 
-```text
-job-application-tool/
-├── app.py                       # Streamlit web app
-├── pyproject.toml               # Python dependencies
-├── README.md                    # Setup and usage guide
-├── jobtool/
-│   ├── documents.py             # Resume extraction and docx writing
-│   ├── job_parser.py            # Job link/text parser
-│   ├── tailor.py                # Keyword matching + document drafts
-│   └── tracker.py               # Excel tracker writer
-├── tests/                       # Automated tests
-├── outputs/                     # Generated resumes and cover letters, created at runtime
-└── applications.xlsx            # Excel tracker, created at runtime
-```
+- `outputs/`
+- `data/`
+- `applications.xlsx`
+- `.env`
+- local databases
+- virtualenv/cache files
 
-## Requirements
+If you save a profile, it is encrypted with your password using `cryptography`/Fernet. Lose the password and the app cannot recover it.
 
-- Python 3.11 or newer
-- Internet connection for first install
-- A browser
-- Recommended: `uv`, the Python package manager
+## Setup with uv
 
-## Setup on any device
-
-### Option A: Easiest setup with `uv`
-
-#### Windows PowerShell
+### Windows PowerShell
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -66,7 +63,7 @@ uv sync
 uv run streamlit run app.py
 ```
 
-#### macOS or Linux
+### macOS/Linux
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -76,11 +73,9 @@ uv sync
 uv run streamlit run app.py
 ```
 
-If `uv` installs successfully but the command is not found, close and reopen your terminal.
+## Setup without uv
 
-### Option B: Standard Python setup without `uv`
-
-#### Windows PowerShell
+### Windows PowerShell
 
 ```powershell
 git clone https://github.com/SmitMachhi/job-application-tool.git job-application-tool
@@ -92,7 +87,7 @@ pip install -e ".[test]"
 streamlit run app.py
 ```
 
-#### macOS or Linux
+### macOS/Linux
 
 ```bash
 git clone https://github.com/SmitMachhi/job-application-tool.git job-application-tool
@@ -104,73 +99,66 @@ pip install -e ".[test]"
 streamlit run app.py
 ```
 
-## If you do not have Git
-
-Download the repo as a ZIP, unzip it, open a terminal in the folder, then run either the `uv` or standard Python setup above starting from the `cd job-application-tool` step.
-
 ## How to use
 
-1. Start the app:
+### 1. Find jobs
 
-```bash
-uv run streamlit run app.py
-```
+Open the app and go to **Find jobs**.
 
-2. Open the local URL printed by Streamlit, usually:
+- Keep or edit the target titles
+- Keep or edit the locations
+- Pick sources
+- Click **Generate job queue in Excel**
 
-```text
-http://localhost:8501
-```
+This updates `applications.xlsx` with source links you can open immediately.
 
-3. Fill your details in the sidebar:
-   - name
-   - email
-   - phone
-   - location
+### 2. Tailor package
 
-4. Upload your resume.
+Go to **Tailor package**.
 
-5. Paste either:
-   - the job posting link, or
-   - the full job description text
+- Upload your base resume
+- Paste a job link and/or full job description
+- Add company/title override if parsing is weak
+- Click **Generate tailored package**
 
-6. Click **Generate application package**.
+The app creates:
 
-7. Download:
-   - tailored resume
-   - cover letter
-   - Excel tracker
+- tailored resume `.docx`
+- cover letter `.docx`
+- updated Excel tracker row
 
-## Where files are saved
+### 3. Tracker
 
-Generated documents:
+Go to **Tracker**.
 
-```text
-outputs/
-```
+Use the table to review jobs, statuses, follow-up dates, and file paths.
 
-Application tracker:
+## Excel columns
 
-```text
-applications.xlsx
-```
+The workbook includes:
 
-Each Excel row includes:
-
-- timestamp
-- company
-- role
-- job link
-- match score
-- matched keywords
-- missing keywords
-- tailored resume path
-- cover letter path
-- application status
+- Date found
+- Company
+- Job title
+- Location
+- Remote/hybrid/onsite
+- Source
+- Apply link
+- Match score
+- Match reason
+- Missing skills
+- Keywords to add
+- Tailored resume summary
+- Tailored resume bullets
+- Cover letter draft
+- Resume file path
+- Cover letter file path
+- Status
+- Applied date
+- Follow-up date
+- Notes
 
 ## Testing
-
-Run this before sharing changes:
 
 ```bash
 uv run pytest -q
@@ -179,73 +167,35 @@ uv run pytest -q
 Expected result:
 
 ```text
-3 passed
+8 passed
 ```
 
-## Fixing `ModuleNotFoundError: No module named jobtool`
+## Current architecture
 
-This repo now keeps `jobtool/` directly in the project root so Streamlit can import it on Windows without special path setup.
-
-If you still see the error, your local copy is old. Run:
-
-```powershell
-cd C:\Users\sachd\job-application-tool
-git pull
-.\.venv\Scripts\Activate.ps1
-pip install -e ".[test]"
-streamlit run app.py
+```text
+app.py
+jobtool/
+  models.py
+  pipeline.py
+  security.py
+  workbook.py
+  documents.py
+  job_parser.py
+  tailor.py
+  tracker.py
+  sources/
+    search_links.py
+tests/
+  test_command_center.py
+  test_tailor.py
+  test_tracker.py
 ```
 
-## Common problems
+## Next build targets
 
-### Streamlit command not found
-
-Use:
-
-```bash
-uv run streamlit run app.py
-```
-
-or activate your virtual environment first.
-
-### Job link does not load
-
-Some job boards block automated scraping. This is normal.
-
-Fix: copy and paste the full job description into the text box.
-
-### PDF resume text looks broken
-
-Some PDFs are image scans or badly exported.
-
-Fix: upload a `.docx` version of your resume if possible.
-
-### Excel file is open and app cannot save
-
-Close `applications.xlsx`, then generate again.
-
-## Privacy
-
-Everything runs locally. The app does not upload your resume to an external API.
-
-The only network request happens when you paste a job link and the app tries to read that page.
-
-## Development notes
-
-Do not commit personal generated files:
-
-- `outputs/`
-- `applications.xlsx`
-- `.venv/`
-
-They are ignored by `.gitignore`.
-
-## Roadmap
-
-Possible upgrades:
-
-- better job title/company extraction
-- one-click LinkedIn/Indeed import
-- status pipeline: saved, applied, interview, rejected, offer
-- dashboard showing applications by week
-- optional LLM rewriting with strict no-fabrication rules
+1. Canada Job Bank real adapter
+2. Greenhouse company-career adapter
+3. Lever company-career adapter
+4. Better dedupe across real postings
+5. Local/API AI rewriting with explicit consent per run
+6. One-click open/apply queue workflow

@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
+
+ROOT = Path(__file__).parent
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
 import pandas as pd
 import streamlit as st
@@ -12,7 +18,6 @@ from jobtool.job_parser import fetch_job_text, parse_job
 from jobtool.tailor import build_cover_letter, build_tailored_resume, extract_keywords, score_match
 from jobtool.tracker import append_application
 
-ROOT = Path(__file__).parent
 OUTPUTS = ROOT / "outputs"
 TRACKER = ROOT / "applications.xlsx"
 OUTPUTS.mkdir(exist_ok=True)

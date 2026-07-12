@@ -60,7 +60,7 @@ job-application-tool/
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-git clone <REPO_URL> job-application-tool
+git clone https://github.com/SmitMachhi/job-application-tool.git job-application-tool
 cd job-application-tool
 uv sync
 uv run streamlit run app.py
@@ -70,7 +70,7 @@ uv run streamlit run app.py
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-git clone <REPO_URL> job-application-tool
+git clone https://github.com/SmitMachhi/job-application-tool.git job-application-tool
 cd job-application-tool
 uv sync
 uv run streamlit run app.py
@@ -83,24 +83,24 @@ If `uv` installs successfully but the command is not found, close and reopen you
 #### Windows PowerShell
 
 ```powershell
-git clone <REPO_URL> job-application-tool
+git clone https://github.com/SmitMachhi/job-application-tool.git job-application-tool
 cd job-application-tool
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install streamlit pandas openpyxl python-docx pypdf requests beautifulsoup4 pytest
+pip install -e ".[test]"
 streamlit run app.py
 ```
 
 #### macOS or Linux
 
 ```bash
-git clone <REPO_URL> job-application-tool
+git clone https://github.com/SmitMachhi/job-application-tool.git job-application-tool
 cd job-application-tool
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install streamlit pandas openpyxl python-docx pypdf requests beautifulsoup4 pytest
+pip install -e ".[test]"
 streamlit run app.py
 ```
 

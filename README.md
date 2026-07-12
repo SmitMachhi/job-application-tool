@@ -35,7 +35,7 @@ job-application-tool/
 ├── app.py                       # Streamlit web app
 ├── pyproject.toml               # Python dependencies
 ├── README.md                    # Setup and usage guide
-├── src/jobtool/
+├── jobtool/
 │   ├── documents.py             # Resume extraction and docx writing
 │   ├── job_parser.py            # Job link/text parser
 │   ├── tailor.py                # Keyword matching + document drafts
@@ -180,6 +180,20 @@ Expected result:
 
 ```text
 3 passed
+```
+
+## Fixing `ModuleNotFoundError: No module named jobtool`
+
+This repo now keeps `jobtool/` directly in the project root so Streamlit can import it on Windows without special path setup.
+
+If you still see the error, your local copy is old. Run:
+
+```powershell
+cd C:\Users\sachd\job-application-tool
+git pull
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[test]"
+streamlit run app.py
 ```
 
 ## Common problems
